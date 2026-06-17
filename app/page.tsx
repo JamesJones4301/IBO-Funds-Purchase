@@ -10,23 +10,28 @@ export default function HomePage() {
     setStatus('sending');
     setMessage('');
 
-    const response = await fetch('/api/requests', {
-      method: 'POST',
-      body: formData
-    });
+    try {
+      const response = await fetch('/api/requests', {
+        method: 'POST',
+        body: formData
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setStatus('error');
+        setMessage(data.error || 'Request could not be submitted.');
+        return;
+      }
+
+      setStatus('success');
+      setMessage('Request submitted. Request ID: ' + data.requestId);
+      const form = document.getElementById('requestForm') as HTMLFormElement | null;
+      form?.reset();
+    } catch (error) {
       setStatus('error');
-      setMessage(data.error || 'Request could not be submitted.');
-      return;
+      setMessage(error instanceof Error ? error.message : 'Request could not be submitted.');
     }
-
-    setStatus('success');
-    setMessage(`Request submitted. Request ID: ${data.requestId}`);
-    const form = document.getElementById('requestForm') as HTMLFormElement | null;
-    form?.reset();
   }
 
   return (
