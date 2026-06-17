@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { APPROVALS_REQUIRED, getApproversForBuyer } from '../../../lib/config';
-import { appendDecision, appendRequest, ensureSheetsExist, uploadReceiptToDrive, type DecisionRecord, type PurchaseRequest } from '../../../lib/google';
-import { sendApprovalEmail, sendBuyerReceivedEmail } from '../../../lib/email';
+import { callConnector } from '../../../lib/appsScript';
 
 export const runtime = 'nodejs';
 
@@ -11,28 +8,22 @@ function value(formData: FormData, key: string) {
   return typeof entry === 'string' ? entry.trim() : '';
 }
 
-function createRequestId() {
-  const date = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
-  return `IBO-${date}-${random}`;
+async function fileToPayload(file: File | null) {
+  if (!file || file.size === 0) return null;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  return {
+    name: file.name,
+    type: file.type || 'application/octet-stream',
+    base64: bytes.toString('base64')
+  };
 }
 
 export async function POST(request: Request) {
   try {
-    await ensureSheetsExist();
-
     const formData = await request.formData();
-    const requestId = createRequestId();
     const receipt = formData.get('receipt');
-    let receiptUrl = '';
 
-    if (receipt instanceof File && receipt.size > 0) {
-      receiptUrl = await uploadReceiptToDrive(receipt, requestId);
-    }
-
-    const purchaseRequest: PurchaseRequest = {
-      requestId,
-      createdAt: new Date().toISOString(),
+    const data = await callConnector<{ requestId: string; status: string }>('createRequest', {
       buyerName: value(formData, 'buyerName'),
       buyerEmail: value(formData, 'buyerEmail'),
       datePurchased: value(formData, 'datePurchased'),
@@ -40,43 +31,11 @@ export async function POST(request: Request) {
       vendorName: value(formData, 'vendorName'),
       itemPurchased: value(formData, 'itemPurchased'),
       actualAmount: value(formData, 'actualAmount'),
-      receiptUrl,
       notes: value(formData, 'notes'),
-      status: 'Pending',
-      approvalCount: '0',
-      rejectionCount: '0',
-      finalDecisionAt: ''
-    };
+      receipt: receipt instanceof File ? await fileToPayload(receipt) : null
+    });
 
-    if (!purchaseRequest.buyerName || !purchaseRequest.buyerEmail || !purchaseRequest.need || !purchaseRequest.vendorName || !purchaseRequest.itemPurchased || !purchaseRequest.actualAmount) {
-      return NextResponse.json({ error: 'Please complete all required fields.' }, { status: 400 });
-    }
-
-    await appendRequest(purchaseRequest);
-
-    const approvers = getApproversForBuyer(purchaseRequest.buyerEmail);
-    if (approvers.length < APPROVALS_REQUIRED) {
-      return NextResponse.json({ error: 'Not enough eligible board members to approve this request.' }, { status: 400 });
-    }
-
-    for (const approver of approvers) {
-      const decision: DecisionRecord = {
-        requestId,
-        approverName: approver.name,
-        approverEmail: approver.email,
-        token: crypto.randomUUID(),
-        decision: 'Pending',
-        comment: '',
-        decisionDate: ''
-      };
-
-      await appendDecision(decision);
-      await sendApprovalEmail(purchaseRequest, decision);
-    }
-
-    await sendBuyerReceivedEmail(purchaseRequest);
-
-    return NextResponse.json({ requestId, status: 'Pending' });
+    return NextResponse.json(data);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });
