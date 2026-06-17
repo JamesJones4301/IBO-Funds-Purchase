@@ -1,28 +1,20 @@
-export const BOARD_MEMBERS = [
-  { name: 'James', email: 'james@proverbs31landsphere.com' },
-  { name: 'Jayda', email: 'mrsjaydaflores@gmail.com' },
-  { name: 'Lawanda', email: 'lawanda@proverbs31landsphere.com' }
-];
-
-export const APPROVALS_REQUIRED = 2;
-
-export function baseUrl() {
-  return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-}
-
-export function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-export function getApproversForBuyer(buyerEmail: string) {
-  const normalizedBuyer = normalizeEmail(buyerEmail);
-  const buyerIsBoardMember = BOARD_MEMBERS.some(
-    member => normalizeEmail(member.email) === normalizedBuyer
-  );
-
-  if (!buyerIsBoardMember) {
-    return BOARD_MEMBERS;
+export function getRequiredEnv(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error('Missing environment variable: ' + name);
   }
+  return value;
+}
 
-  return BOARD_MEMBERS.filter(member => normalizeEmail(member.email) !== normalizedBuyer);
+export function getBaseUrl() {
+  const value = getRequiredEnv('NEXT_PUBLIC_BASE_URL');
+  return value.endsWith('/') ? value.slice(0, -1) : value;
+}
+
+export function getConnectorUrl() {
+  return getRequiredEnv('APPS_SCRIPT_URL');
+}
+
+export function getConnectorKey() {
+  return getRequiredEnv('IBO_CONNECTOR_KEY');
 }
