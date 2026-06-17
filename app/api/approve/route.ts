@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { redirect } from 'next/navigation';
 import { callConnector } from '../../../lib/appsScript';
 
 export const runtime = 'nodejs';
@@ -27,7 +26,12 @@ export async function POST(request: Request) {
       comment
     });
 
-    redirect('/result?status=' + encodeURIComponent(decision) + '&requestId=' + encodeURIComponent(requestId) + '&final=' + encodeURIComponent(data.finalStatus));
+    const redirectUrl = new URL('/result', request.url);
+    redirectUrl.searchParams.set('status', decision);
+    redirectUrl.searchParams.set('requestId', requestId);
+    redirectUrl.searchParams.set('final', data.finalStatus);
+
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });
