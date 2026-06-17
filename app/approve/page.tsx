@@ -1,4 +1,24 @@
-import { getDecisionByToken, getRequestById } from '../../lib/google';
+import { callConnector } from '../../lib/appsScript';
+
+type ApprovalDetails = {
+  request: {
+    requestId: string;
+    buyerName: string;
+    buyerEmail: string;
+    datePurchased: string;
+    need: string;
+    vendorName: string;
+    itemPurchased: string;
+    actualAmount: string;
+    receiptUrl: string;
+    notes: string;
+    status: string;
+  };
+  decision: {
+    approverName: string;
+    decision: string;
+  };
+};
 
 export default async function ApprovePage({ searchParams }: { searchParams: Promise<{ requestId?: string; token?: string }> }) {
   const params = await searchParams;
@@ -9,15 +29,16 @@ export default async function ApprovePage({ searchParams }: { searchParams: Prom
     return <main><div className="card"><h1>Approval Link Missing</h1><p className="error">This approval link is missing a request ID or token.</p></div></main>;
   }
 
-  const requestData = await getRequestById(requestId);
-  const decisionData = await getDecisionByToken(requestId, token);
+  let details: ApprovalDetails;
 
-  if (!requestData || !decisionData) {
-    return <main><div className="card"><h1>Approval Not Found</h1><p className="error">This approval link is not valid.</p></div></main>;
+  try {
+    details = await callConnector<ApprovalDetails>('getRequest', { requestId, token });
+  } catch (error) {
+    return <main><div className="card"><h1>Approval Not Found</h1><p className="error">{error instanceof Error ? error.message : 'This approval link is not valid.'}</p></div></main>;
   }
 
-  const request = requestData.request;
-  const decision = decisionData.decision;
+  const request = details.request;
+  const decision = details.decision;
   const alreadyDecided = decision.decision && decision.decision !== 'Pending';
   const isFinal = request.status && request.status !== 'Pending';
 
