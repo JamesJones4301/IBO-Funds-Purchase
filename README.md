@@ -1,18 +1,19 @@
 # In Becoming One Funds Approval
 
-This is a Vercel-ready approval app for In Becoming One fund purchases.
+This is a Vercel approval page that uses Google Apps Script as the simple connector to Google Sheets, Google Drive, and Gmail.
 
 ## Workflow
 
-1. Buyer submits a funds request.
-2. Request ID is created automatically.
-3. Request is saved to Google Sheets.
-4. If the buyer is a board member, the two other board members receive approval emails.
-5. If the buyer is not a board member, all three board members receive approval emails.
-6. The request is approved after 2 eligible board approvals.
-7. Any rejection rejects the request.
-8. Approval and rejection comments are saved to Google Sheets.
-9. Receipts upload to Google Drive when `GOOGLE_DRIVE_FOLDER_ID` is configured.
+1. Buyer submits a funds request in Vercel.
+2. Vercel sends the request to Apps Script.
+3. Apps Script creates a Request ID.
+4. Apps Script saves the request to Google Sheets.
+5. Apps Script saves the receipt to Google Drive when one is uploaded.
+6. If the buyer is a board member, the two other board members receive approval emails.
+7. If the buyer is not a board member, all three board members receive approval emails.
+8. The request is approved after 2 eligible board approvals.
+9. Any rejection rejects the request.
+10. Approval and rejection comments are saved to Google Sheets.
 
 ## Board emails
 
@@ -20,88 +21,52 @@ This is a Vercel-ready approval app for In Becoming One fund purchases.
 - Jayda: mrsjaydaflores@gmail.com
 - Lawanda: lawanda@proverbs31landsphere.com
 
-## Google Sheet setup
+## Vercel environment variables
 
-Create a Google Sheet. Copy the Sheet ID from the URL.
-
-Example URL:
+Only three variables are required:
 
 ```text
-https://docs.google.com/spreadsheets/d/SHEET_ID_HERE/edit
+NEXT_PUBLIC_BASE_URL=https://your-vercel-app.vercel.app
+APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+IBO_CONNECTOR_KEY=choose-a-private-key-here
 ```
 
-Add the Sheet ID to Vercel as:
+`IBO_CONNECTOR_KEY` must match `CONNECTOR_KEY` in Apps Script.
+
+## Setup order
+
+1. Paste the Apps Script code into the Google Sheet.
+2. Deploy Apps Script as a Web App.
+3. Copy the Apps Script Web App URL.
+4. Add Vercel environment variables.
+5. Deploy Vercel.
+6. Copy the Vercel URL.
+7. Put the Vercel URL in Apps Script as `VERCEL_BASE_URL`.
+8. Redeploy Apps Script.
+9. Update `NEXT_PUBLIC_BASE_URL` in Vercel to the final Vercel URL.
+10. Redeploy Vercel.
+
+## Google Sheet
+
+The Apps Script uses this Google Sheet:
 
 ```text
-GOOGLE_SHEET_ID=SHEET_ID_HERE
+1wgUHosxyBpMQ9-xD3t3mM9z4ykhrG5_7-2RnvXsB5Tg
 ```
 
-The app creates these tabs automatically:
+The Apps Script creates these tabs:
 
 - Requests
 - Decisions
 
-## Google service account setup
+## Google Drive receipt folder
 
-1. Create a Google Cloud project.
-2. Enable Google Sheets API.
-3. Enable Google Drive API.
-4. Create a service account.
-5. Create a JSON key.
-6. Copy the service account email.
-7. Share the Google Sheet with the service account email as Editor.
-8. If using receipt uploads, create a Drive folder and share it with the service account email as Editor.
-
-Use these Vercel environment variables:
+The Apps Script saves receipts here:
 
 ```text
-GOOGLE_SERVICE_ACCOUNT_EMAIL=
-GOOGLE_PRIVATE_KEY=
-GOOGLE_SHEET_ID=
-GOOGLE_DRIVE_FOLDER_ID=
-```
-
-For `GOOGLE_PRIVATE_KEY`, keep the `\n` line breaks inside the value.
-
-## SMTP email setup
-
-This app uses SMTP through Nodemailer.
-
-For Gmail, create an app password and use:
-
-```text
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM="In Becoming One <your-email@gmail.com>"
-```
-
-## Vercel setup
-
-1. Go to Vercel.
-2. Add a new project.
-3. Import this GitHub repository.
-4. Add the environment variables from `.env.example`.
-5. Deploy.
-6. Copy the deployment URL.
-7. Set `NEXT_PUBLIC_BASE_URL` to the live Vercel URL.
-8. Redeploy.
-
-## Local development
-
-```bash
-npm install
-npm run dev
-```
-
-Open:
-
-```text
-http://localhost:3000
+1Vd5c-HPC8FMvCrrhxOK5zRGI2NA1y-n9
 ```
 
 ## Important nonprofit control
 
-Do not purchase with IBO funds until the request shows Approved in Google Sheets. A buyer who is also a board member cannot approve their own request because the app excludes the buyer email from the approver list.
+Do not purchase with IBO funds until the request shows Approved in Google Sheets. A buyer who is also a board member cannot approve their own request because Apps Script excludes the buyer email from the approver list.
