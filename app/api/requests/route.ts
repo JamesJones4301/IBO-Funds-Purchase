@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     const receipt = formData.get('receipt');
 
     const data = await callConnector<{ requestId: string; status: string }>('createRequest', {
+      requestType: value(formData, 'requestType'),
       buyerName: value(formData, 'buyerName'),
       buyerEmail: value(formData, 'buyerEmail'),
       datePurchased: value(formData, 'datePurchased'),
