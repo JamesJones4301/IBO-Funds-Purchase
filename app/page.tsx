@@ -44,6 +44,14 @@ export default function HomePage() {
         {status === 'error' && <p className="error">{message}</p>}
 
         <form id="requestForm" action={submitRequest}>
+          <label htmlFor="requestType">Request Type</label>
+          <select id="requestType" name="requestType" required defaultValue="">
+            <option value="" disabled>Select request type</option>
+            <option value="New Request">New Request</option>
+            <option value="Receipt Submission">Receipt Submission</option>
+            <option value="Reimbursement">Reimbursement</option>
+          </select>
+
           <div className="row">
             <div>
               <label htmlFor="buyerName">Buyer Name</label>
