@@ -88,8 +88,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <label htmlFor="receipt">Receipt Upload, optional before purchase</label>
-          <input id="receipt" name="receipt" type="file" accept="image/*,.pdf" />
+          <label htmlFor="receiptLink">Receipt Link</label>
+          <input
+            id="receiptLink"
+            name="receiptLink"
+            type="url"
+            placeholder="Paste Google Drive receipt link here"
+          />
+          <p className="notice">Upload receipts to the IBO Purchase Receipts Google Drive folder, then paste the share link here.</p>
 
           <label htmlFor="notes">Notes</label>
           <textarea id="notes" name="notes" />
