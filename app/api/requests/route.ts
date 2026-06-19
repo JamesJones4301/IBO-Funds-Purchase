@@ -8,20 +8,9 @@ function value(formData: FormData, key: string) {
   return typeof entry === 'string' ? entry.trim() : '';
 }
 
-async function fileToPayload(file: File | null) {
-  if (!file || file.size === 0) return null;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  return {
-    name: file.name,
-    type: file.type || 'application/octet-stream',
-    base64: bytes.toString('base64')
-  };
-}
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const receipt = formData.get('receipt');
 
     const data = await callConnector<{ requestId: string; status: string }>('createRequest', {
       requestType: value(formData, 'requestType'),
@@ -32,8 +21,8 @@ export async function POST(request: Request) {
       vendorName: value(formData, 'vendorName'),
       itemPurchased: value(formData, 'itemPurchased'),
       actualAmount: value(formData, 'actualAmount'),
-      notes: value(formData, 'notes'),
-      receipt: receipt instanceof File ? await fileToPayload(receipt) : null
+      receiptLink: value(formData, 'receiptLink'),
+      notes: value(formData, 'notes')
     });
 
     return NextResponse.json(data);
